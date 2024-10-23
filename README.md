@@ -1,21 +1,28 @@
-# PQC Prototype
+# Post-Quantum Cryptography KEM (Key Encapsulation Mechanism) Example
 
-This project demonstrates the use of Key Encapsulation Mechanism (KEM) for secure key exchange using the `kem_receiver.c` and `kem_sender.c` programs. The project utilizes Open Quantum Safe (OQS) libraries for post-quantum cryptographic techniques.
+This repository demonstrates a simple Key Encapsulation Mechanism (KEM) example using a receiver and sender. The receiver first generates a public/private key pair, and the sender then uses the receiver's public key to securely send a shared key. This is implemented using the **liboqs** (Open Quantum Safe) library.
 
-## Requirements
+## Prerequisites
 
-- GCC compiler
-- Open Quantum Safe (OQS) library
+Make sure you have the **liboqs** library installed on your system. Follow the [Open Quantum Safe](https://openquantumsafe.org/liboqs/) documentation to install the library and its dependencies.
 
-Make sure the OQS library is installed on your system. You can find more information about OQS installation [here](https://github.com/open-quantum-safe/liboqs).
+## Instructions
 
-## Compilation Instructions
+### Compile and Run the Programs
 
-To compile and run the programs, follow these steps:
-
-### Step 1: Compile the Receiver Program
-
-To compile the receiver program, run the following command:
+Follow these steps to compile and run both the receiver and sender:
 
 ```bash
+# Step 1: Compile the Receiver
 gcc kem_receiver.c -o kem_receiver -loqs
+
+# Step 2: Compile the Sender
+gcc kem_sender.c -o kem_sender -loqs
+
+# Step 3: Run the Receiver
+./kem_receiver
+
+# Step 4: In a separate terminal, run the Sender
+./kem_sender
+```
+
