@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 #define PORT 9090
 
@@ -35,12 +36,14 @@ void send_ciphertext(int socket, uint8_t *ciphertext, size_t length) {
         exit(1);
     }
     printf("Ciphertext sent to receiver.\n");
-    print_public_key(ciphertext,length);
+    // print_public_key(ciphertext,length);
 }
 
 int main() {
     int sock;
     struct sockaddr_in serv_addr;
+
+    string s = "Iam Jagadeesh";
 
     OQS_KEM *kem = OQS_KEM_new("ML-KEM-512");
 
@@ -84,24 +87,13 @@ int main() {
     // Receive the public key from the receiver
     receive_public_key(sock, public_key, kem->length_public_key);
 
-    // Generate the keypair (public and secret keys)
-    if (OQS_KEM_keypair(kem, public_key, secret_key) != OQS_SUCCESS) {
-        printf("Failed to generate keypair\n");
-        close(sock);
-        OQS_KEM_free(kem);
-        return 1;
-    }
-
-    // Encapsulate the shared secret using the public key
+    // Encypt the shared key
     if (OQS_KEM_encaps(kem, ciphertext, shared_secret_enc, public_key) != OQS_SUCCESS) {
         printf("Failed to encapsulate shared secret\n");
         close(sock);
         OQS_KEM_free(kem);
         return 1;
     }
-
-    // Send the ciphertext (encapsulated key) to the receiver
-    send_ciphertext(sock, ciphertext, kem->length_ciphertext);
 
     // Print the shared secret on the sender's side
     printf("Shared secret on sender's side: ");
@@ -110,9 +102,13 @@ int main() {
     }
     printf("\n");
 
+    // Send the ciphertext (encapsulated key) to the receiver
+    send_ciphertext(sock, ciphertext, kem->length_ciphertext);
+
     // Free resources
     close(sock);
     OQS_KEM_free(kem);
 
     return 0;
+
 }

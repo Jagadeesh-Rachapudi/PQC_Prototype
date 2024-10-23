@@ -130,6 +130,8 @@ int main() {
     }
     printf("\n");
 
+    printf("%ld",kem->length_shared_secret);
+
     // Clean up and close
     OQS_KEM_free(kem);
     close(new_socket);
