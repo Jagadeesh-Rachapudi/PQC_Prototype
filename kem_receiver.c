@@ -75,35 +75,18 @@ uint32_t receive_number(int socket) {
     return received_number;
 }
 
-void receive_encrypted_text(int socket, size_t encrypted_text_len) {
-    // Dynamically allocate memory for the buffer
-    uint8_t *buffer = (uint8_t *)malloc(encrypted_text_len * sizeof(uint8_t));
-    if (buffer == NULL) {
-        printf("Memory allocation failed\n");
-        close(socket);
-        exit(1);
-    }
-
-    // Receive the encrypted text
+void receive_encrypted_text(int socket, size_t encrypted_text_len ,uint8_t *buffer) {
     ssize_t bytes_received = recv(socket, buffer, encrypted_text_len, 0);
     if (bytes_received != encrypted_text_len) {
         printf("Failed to receive the full encrypted text\n");
-        free(buffer);  // Free dynamically allocated memory
         close(socket);
         exit(1);
     }
-
     printf("Encrypted text received successfully.\n");
-
-    // Process the received encrypted text
-    // Example: Print the received encrypted text in hexadecimal format
     for (size_t i = 0; i < encrypted_text_len; i++) {
         printf("%02X", buffer[i]);
     }
     printf("\n");
-
-    // Free the allocated memory after processing
-    free(buffer);
 }
 
 int main() {
@@ -114,6 +97,8 @@ int main() {
     uint8_t *received_aes_ciphertext = NULL;
     size_t received_aes_ciphertext_len;
     uint32_t size_of_encypted_plain_text=0;
+    unsigned char *decrypted_text = NULL;  // This will hold the decrypted text
+    int decrypted_text_len;
 
     //Establishing the Connections
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -173,12 +158,24 @@ int main() {
     size_of_encypted_plain_text=receive_number(new_socket);
     size_t encrypted_text_len = size_of_encypted_plain_text;
     printf("The size of encypted plain text %d \n",size_of_encypted_plain_text);
-
-    receive_encrypted_text(new_socket, encrypted_text_len);
+    uint8_t *buffer = (uint8_t *)malloc(encrypted_text_len * sizeof(uint8_t));
+    if (buffer == NULL) {
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    receive_encrypted_text(new_socket, encrypted_text_len,buffer);
+    aes_decrypt(aes_key, buffer, encrypted_text_len, &decrypted_text, &decrypted_text_len);
+    printf("Decrypted text: ");
+    for (int i = 0; i < decrypted_text_len; i++) {
+        printf("%c", decrypted_text[i]);
+    }
+    printf("\n");
+    
 
     // Clean up and close
     OQS_KEM_free(kem);
     close(new_socket);
     close(server_fd);
+    free(buffer);
     return 0;
 }

@@ -110,7 +110,7 @@ void send_encrypted_text(int socket, uint8_t *encrypted_text, size_t encrypted_t
 int main() {
     int sock;
     struct sockaddr_in serv_addr;
-    unsigned char plaintext[] = "I am Jagdeesh ";
+    unsigned char plaintext[] = "I am Jagdeesh Rachapudi who is working as R and D scintist";
     unsigned char *encrypted_text = NULL;
     int encrypted_text_len;
     int aes_cipher_lenght;
