@@ -97,6 +97,16 @@ void send_number(int socket, uint32_t number) {
     }
 }
 
+void send_encrypted_text(int socket, uint8_t *encrypted_text, size_t encrypted_text_len) {
+    ssize_t bytes_sent = send(socket, encrypted_text, encrypted_text_len, 0);
+    if (bytes_sent != encrypted_text_len) {
+        printf("Failed to send the full encrypted text\n");
+        close(socket);
+        exit(1);
+    }
+    printf("Encrypted text sent to receiver.\n");
+}
+
 int main() {
     int sock;
     struct sockaddr_in serv_addr;
@@ -159,7 +169,7 @@ int main() {
     //Encypted Plain text with AES
     aes_encrypt(aes_key, plaintext, &encrypted_text, &encrypted_text_len);
     aes_cipher_lenght= *encrypted_text;
-    printBytes(encrypted_text,aes_cipher_lenght,"AES Encypted text");
+    printBytes(encrypted_text,encrypted_text_len,"AES Encypted text");
     printf("%d\n",encrypted_text_len);
 
     //Decypting Plain text with AES key
@@ -172,7 +182,7 @@ int main() {
 
     //sending the size of encypted plain text to reciver
     send_number(sock, encrypted_text_len);
-    
+    send_encrypted_text(sock, encrypted_text, encrypted_text_len);
 
     // Free resources
     close(sock);

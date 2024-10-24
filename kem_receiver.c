@@ -75,6 +75,37 @@ uint32_t receive_number(int socket) {
     return received_number;
 }
 
+void receive_encrypted_text(int socket, size_t encrypted_text_len) {
+    // Dynamically allocate memory for the buffer
+    uint8_t *buffer = (uint8_t *)malloc(encrypted_text_len * sizeof(uint8_t));
+    if (buffer == NULL) {
+        printf("Memory allocation failed\n");
+        close(socket);
+        exit(1);
+    }
+
+    // Receive the encrypted text
+    ssize_t bytes_received = recv(socket, buffer, encrypted_text_len, 0);
+    if (bytes_received != encrypted_text_len) {
+        printf("Failed to receive the full encrypted text\n");
+        free(buffer);  // Free dynamically allocated memory
+        close(socket);
+        exit(1);
+    }
+
+    printf("Encrypted text received successfully.\n");
+
+    // Process the received encrypted text
+    // Example: Print the received encrypted text in hexadecimal format
+    for (size_t i = 0; i < encrypted_text_len; i++) {
+        printf("%02X", buffer[i]);
+    }
+    printf("\n");
+
+    // Free the allocated memory after processing
+    free(buffer);
+}
+
 int main() {
     int server_fd, new_socket ,ns;
     struct sockaddr_in address;
@@ -140,7 +171,10 @@ int main() {
 
     //Getting the encypted plain text 
     size_of_encypted_plain_text=receive_number(new_socket);
+    size_t encrypted_text_len = size_of_encypted_plain_text;
     printf("The size of encypted plain text %d \n",size_of_encypted_plain_text);
+
+    receive_encrypted_text(new_socket, encrypted_text_len);
 
     // Clean up and close
     OQS_KEM_free(kem);
