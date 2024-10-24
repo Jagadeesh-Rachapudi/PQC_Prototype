@@ -92,10 +92,10 @@ void aes_decrypt(const uint8_t *key, const unsigned char *ciphertext, int cipher
 int main() {
     int sock;
     struct sockaddr_in serv_addr;
-    unsigned char plaintext[] = "Kajajjajajajaajjjjjjjjjjjj";
+    unsigned char plaintext[] = "I am Jagdeesh JagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeesh";
     unsigned char *encrypted_text = NULL;
     int encrypted_text_len;
-    int AES_cipher_len;
+    int aes_cipher_lenght;
     unsigned char *decrypted_text = NULL;  // This will hold the decrypted text
     int decrypted_text_len;
 
@@ -108,8 +108,8 @@ int main() {
 
     uint8_t public_key[kem->length_public_key];
     uint8_t secret_key[kem->length_secret_key];
-    uint8_t ciphertext[kem->length_ciphertext];
-    uint8_t shared_secret_enc[kem->length_shared_secret];
+    uint8_t aes_key_cipher[kem->length_ciphertext];
+    uint8_t aes_key[kem->length_shared_secret];
 
     //Establishing connection
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -135,19 +135,32 @@ int main() {
     // Receive the public key from the receiver
     receive_public_key(sock, public_key, kem->length_public_key);
 
-    // Encypt the shared key
-    if (OQS_KEM_encaps(kem, ciphertext, shared_secret_enc, public_key) != OQS_SUCCESS) {
+    // Creating AES_key
+    if (OQS_KEM_encaps(kem, aes_key_cipher, aes_key, public_key) != OQS_SUCCESS) {
         printf("Failed to encapsulate shared secret\n");
         close(sock);
         OQS_KEM_free(kem);
         return 1;
     }
-
-    // Print the shared secret on the sender's side
-    printBytes(shared_secret_enc,kem->length_shared_secret,"Shared secret on sender's sideaaaaaaaaaaaaaa");
+    printf("aes Key is created \n");
+    printBytes(aes_key,kem->length_shared_secret,"AES on sender's side");
     
-    // Send the ciphertext (encapsulated key) to the receiver
-    send_kem_ciphertext(sock, ciphertext, kem->length_ciphertext);
+    // Send the Kem cipher (aes key) to the receiver
+    send_kem_ciphertext(sock, aes_key_cipher, kem->length_ciphertext);
+
+    //Encypted Plain text with AES
+    aes_encrypt(aes_key, plaintext, &encrypted_text, &encrypted_text_len);
+    aes_cipher_lenght= *encrypted_text;
+    printBytes(encrypted_text,aes_cipher_lenght,"AES Encypted text");
+    printf("%d\n",encrypted_text_len);
+
+    //Decypting Plain text with AES key
+    aes_decrypt(aes_key, encrypted_text, encrypted_text_len, &decrypted_text, &decrypted_text_len);
+    printf("Decrypted text: ");
+    for (int i = 0; i < decrypted_text_len; i++) {
+        printf("%c", decrypted_text[i]);
+    }
+    printf("\n");
 
     // Free resources
     close(sock);

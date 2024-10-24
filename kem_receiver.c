@@ -71,76 +71,59 @@ int main() {
     uint8_t *received_aes_ciphertext = NULL;
     size_t received_aes_ciphertext_len;
 
-    // Creating socket file descriptor
+    //Establishing the Connections
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         printf("Socket failed\n");
         exit(1);
     }
-
-    // Bind the socket to the port
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = inet_addr("127.0.0.1"); 
     address.sin_port = htons(PORT);
-
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         printf("Bind failed\n");
         exit(1);
     }
-
     if (listen(server_fd, 3) < 0) {
         printf("Listen failed\n");
         exit(1);
     }
-
-    // Accept the connection
     if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
         printf("Accept failed\n");
         exit(1);
     }
     ns=new_socket;
+
+
     // Initialize the ML-KEM-512 algorithm
     OQS_KEM *kem = OQS_KEM_new("ML-KEM-512");
-
     if (kem == NULL) {
         printf("Failed to initialize ML-KEM-512\n");
         return 1;
     }
-
     uint8_t public_key[kem->length_public_key];
     uint8_t secret_key[kem->length_secret_key];
-
-    // Generate keypair (public and secret keys)
     if (OQS_KEM_keypair(kem, public_key, secret_key) != OQS_SUCCESS) {
         printf("Failed to generate keypair\n");
         OQS_KEM_free(kem);
         close(new_socket);
         return 1;
     }
+    //Sending the Public key to sender
     send_public_key(new_socket, public_key, kem->length_public_key);
 
-    // Allocate space for ciphertext and shared secret
+    //Getting AES_key 
     uint8_t ciphertext[kem->length_ciphertext];
-    uint8_t shared_secret_dec[kem->length_shared_secret];
-
-    // Receive the ciphertext from the sender
+    uint8_t aes_key[kem->length_shared_secret];
     receive_kem_ciphertext(new_socket, ciphertext, kem->length_ciphertext);
-
-    // Decapsulate the shared secret using the secret key
-    if (OQS_KEM_decaps(kem, shared_secret_dec, ciphertext, secret_key) != OQS_SUCCESS) {
+    if (OQS_KEM_decaps(kem, aes_key, ciphertext, secret_key) != OQS_SUCCESS) {
         printf("Failed to decapsulate shared secret\n");
         OQS_KEM_free(kem);
         close(new_socket);
         return 1;
     }
 
-    // Print the shared secret on the receiver's side
-    printf("Shared secret on receiver's side: ");
-    for (size_t i = 0; i < kem->length_shared_secret; i++) {
-        printf("%02X", shared_secret_dec[i]);
-    }
-    printf("\n");
-
-    printf("%ld",kem->length_shared_secret);
+    // Print the aes key on the receiver's side
+    printBytes(aes_key,kem->length_shared_secret,"AES on receiver's side");
 
     // Clean up and close
     OQS_KEM_free(kem);
