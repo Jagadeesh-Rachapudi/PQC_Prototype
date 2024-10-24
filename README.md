@@ -14,15 +14,15 @@ Follow these steps to compile and run both the receiver and sender:
 
 ```bash
 # Step 1: Compile the Receiver
-gcc kem_receiver.c -o kem_receiver -loqs
+gcc kem_receiver.c -o r -loqs -lcrypto
 
 # Step 2: Compile the Sender
-gcc kem_sender.c -o kem_sender -loqs
+gcc kem_sender.c -o s -loqs -lcrypto
 
 # Step 3: Run the Receiver
-./kem_receiver
+./r
 
 # Step 4: In a separate terminal, run the Sender
-./kem_sender
+./s
 ```
 
