@@ -4,18 +4,24 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <openssl/aes.h>
+#include <openssl/aes.h>
+#include <openssl/evp.h>
+#define PORT 9090
 
-#define PORT 9090  // Updated to match sender's port
-
-void print_public_key(uint8_t *key, size_t length) {
-    printf("Reciver sending public key: ");
+void printBytes(uint8_t *key, size_t length, const char *s) {
+    printf("%s: ", s);
     for (size_t i = 0; i < length; i++) {
         printf("%02X", key[i]);
     }
     printf("\n");
 }
 
-// Function to send the public key to the sender
+void handleErrors() {
+    printf("An error occurred.\n");
+    exit(1);
+}
+
 void send_public_key(int socket, uint8_t *public_key, size_t length) {
     ssize_t bytes_sent = send(socket, public_key, length, 0);
     if (bytes_sent != length) {
@@ -24,38 +30,46 @@ void send_public_key(int socket, uint8_t *public_key, size_t length) {
         exit(1);
     }
     printf("Public key sent to sender.\n");
-    // printf("The sent public key is.\n");
-    // print_public_key(public_key,length);
-
-    
 }
 
-// Function to receive ciphertext from the sender
-// Function to receive ciphertext from the sender (without a loop)
-void receive_ciphertext(int socket, uint8_t *ciphertext, size_t length) {
-    ssize_t bytes_received = read(socket, ciphertext, length);  // Single read call
-
+void receive_kem_ciphertext(int socket, uint8_t *ciphertext, size_t length) {
+    ssize_t bytes_received = read(socket, ciphertext, length);
     if (bytes_received <= 0) {
         printf("Error or connection closed while receiving ciphertext\n");
         close(socket);
         exit(1);
     }
-
     if (bytes_received != length) {
         printf("Failed to receive full ciphertext, received only %ld bytes\n", bytes_received);
         close(socket);
         return;
     }
-
-    printf("Successfully received ciphertext of size: %ld bytes\n", bytes_received);
 }
 
-
+void aes_decrypt(const uint8_t *key, const unsigned char *ciphertext, int ciphertext_len, unsigned char **plaintext, int *plaintext_len) {
+    EVP_CIPHER_CTX *ctx;
+    int len;
+    int block_size = 16;
+    *plaintext = (unsigned char *)malloc(ciphertext_len + block_size);
+    if (!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
+    if (1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL))
+        handleErrors();
+    if (1 != EVP_DecryptUpdate(ctx, *plaintext, &len, ciphertext, ciphertext_len))
+        handleErrors();
+    *plaintext_len = len;
+    if (1 != EVP_DecryptFinal_ex(ctx, *plaintext + len, &len))
+        handleErrors();
+    *plaintext_len += len;
+    EVP_CIPHER_CTX_free(ctx);
+}
 
 int main() {
     int server_fd, new_socket ,ns;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
+    int aes_cipher_size=0;
+    uint8_t *received_aes_ciphertext = NULL;
+    size_t received_aes_ciphertext_len;
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -92,7 +106,6 @@ int main() {
         return 1;
     }
 
-    // Allocate space for public and secret keys
     uint8_t public_key[kem->length_public_key];
     uint8_t secret_key[kem->length_secret_key];
 
@@ -103,8 +116,6 @@ int main() {
         close(new_socket);
         return 1;
     }
-
-    // Send the public key to the sender
     send_public_key(new_socket, public_key, kem->length_public_key);
 
     // Allocate space for ciphertext and shared secret
@@ -112,8 +123,7 @@ int main() {
     uint8_t shared_secret_dec[kem->length_shared_secret];
 
     // Receive the ciphertext from the sender
-    receive_ciphertext(new_socket, ciphertext, kem->length_ciphertext);
-    print_public_key(ciphertext,kem->length_ciphertext);
+    receive_kem_ciphertext(new_socket, ciphertext, kem->length_ciphertext);
 
     // Decapsulate the shared secret using the secret key
     if (OQS_KEM_decaps(kem, shared_secret_dec, ciphertext, secret_key) != OQS_SUCCESS) {
