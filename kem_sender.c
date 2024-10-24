@@ -88,11 +88,19 @@ void aes_decrypt(const uint8_t *key, const unsigned char *ciphertext, int cipher
     EVP_CIPHER_CTX_free(ctx);
 }
 
+void send_number(int socket, uint32_t number) {
+    ssize_t bytes_sent = send(socket, &number, sizeof(number), 0);
+    if (bytes_sent != sizeof(number)) {
+        printf("Failed to send the number\n");
+        close(socket);
+        exit(1);
+    }
+}
 
 int main() {
     int sock;
     struct sockaddr_in serv_addr;
-    unsigned char plaintext[] = "I am Jagdeesh JagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeeshJagdeesh";
+    unsigned char plaintext[] = "I am Jagdeesh ";
     unsigned char *encrypted_text = NULL;
     int encrypted_text_len;
     int aes_cipher_lenght;
@@ -161,6 +169,10 @@ int main() {
         printf("%c", decrypted_text[i]);
     }
     printf("\n");
+
+    //sending the size of encypted plain text to reciver
+    send_number(sock, encrypted_text_len);
+    
 
     // Free resources
     close(sock);

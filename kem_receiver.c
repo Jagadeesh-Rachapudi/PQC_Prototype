@@ -63,6 +63,18 @@ void aes_decrypt(const uint8_t *key, const unsigned char *ciphertext, int cipher
     EVP_CIPHER_CTX_free(ctx);
 }
 
+uint32_t receive_number(int socket) {
+    uint32_t received_number;
+    ssize_t bytes_received = recv(socket, &received_number, sizeof(received_number), 0);
+    
+    if (bytes_received != sizeof(received_number)) {
+        printf("Failed to receive the full number\n");
+        close(socket);
+        exit(1);
+    }
+    return received_number;
+}
+
 int main() {
     int server_fd, new_socket ,ns;
     struct sockaddr_in address;
@@ -70,6 +82,7 @@ int main() {
     int aes_cipher_size=0;
     uint8_t *received_aes_ciphertext = NULL;
     size_t received_aes_ciphertext_len;
+    uint32_t size_of_encypted_plain_text=0;
 
     //Establishing the Connections
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -124,6 +137,10 @@ int main() {
 
     // Print the aes key on the receiver's side
     printBytes(aes_key,kem->length_shared_secret,"AES on receiver's side");
+
+    //Getting the encypted plain text 
+    size_of_encypted_plain_text=receive_number(new_socket);
+    printf("The size of encypted plain text %d \n",size_of_encypted_plain_text);
 
     // Clean up and close
     OQS_KEM_free(kem);
