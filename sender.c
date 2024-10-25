@@ -110,7 +110,7 @@ void send_encrypted_text(int socket, uint8_t *encrypted_text, size_t encrypted_t
 int main() {
     int sock;
     struct sockaddr_in serv_addr;
-    unsigned char plaintext[] = "I am Jagdeesh Rachapudi who is working as R and D scintist";
+    unsigned char plaintext[] = "I am Jagdeesh Rachapudi ";
     unsigned char *encrypted_text = NULL;
     int encrypted_text_len;
     int aes_cipher_lenght;
@@ -137,7 +137,7 @@ int main() {
     }
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) { //Replace with traget IP adress
         printf("Invalid address\n");
         close(sock);
         OQS_KEM_free(kem);
